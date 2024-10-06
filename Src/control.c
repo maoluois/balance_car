@@ -4,12 +4,6 @@
 #include "tim.h"
 #include "control.h"
 #include "pid.h"
-// PV
-PID_ControllerTypeDef motor1PID;
-PID_ControllerTypeDef motor2PID;
-float motor1Speed;
-float motor2Speed;
-
 
 
 void Set_pulse1(float speed)

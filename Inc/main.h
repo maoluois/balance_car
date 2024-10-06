@@ -88,7 +88,8 @@ void Error_Handler(void);
 #define RELOADVALUE 20000
 #define max_pulse 1000
 #define fliter_mean_sample1 10
-#define fliter_mean_sample2 3
+#define fliter_mean_sample2 6
+#define cascade_pid_param 0.1
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
