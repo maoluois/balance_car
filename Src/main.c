@@ -64,20 +64,20 @@ int32_t totalAngle2 = 0;
 int32_t lastAngle = 0;        // 上一次的角度
 int16_t loopNum1 = 0;          // 防超上限
 int16_t loopNum2 = 0;
-float speed1 = 0;              // 转�?�单位：�?????/秒）
+float speed1 = 0;              // 转速单位：转/秒
 float speed2 = 0;
 
 // usart PV
 uint8_t RxBuffer[1];          //串口接收缓冲
 uint16_t RxLine = 0;          //指令长度
 uint8_t DataBuff[200];        //指令内容
-float SetSpeed = 0;           //设置目标速度（单位：�?????/秒）
+float SetSpeed = 0;           //设置目标速度（单位：转/秒）
 
 // fliter PV
 float mean_buff1[100];             //滤波缓冲
 float mean_buff2[100];
 float mean_buff3[100];
-int buff_index1 = 0;                //滤波缓冲区索�?????
+int buff_index1 = 0;                //滤波缓冲区索引
 int buff_index2 = 0;
 
 // i2c PV
@@ -251,12 +251,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         totalAngle2 = pluse2;
 
         // 计算速度
-        speed1 = ((float)(RELOADVALUE / 2.0 - totalAngle1) / convert_param) * 100;  // 编码器计数方向相�????
+        speed1 = ((float)(RELOADVALUE / 2.0 - totalAngle1) / convert_param) * 100;  // 编码器计数方向相反
         speed2 = ((float)(totalAngle2 - RELOADVALUE / 2.0) / convert_param) * 100;
 
         // 获取角度
         mpu_dmp_get_data(&pitch, &roll, &yaw);
-
 
         // 滤波
         mean_buff1[buff_index1++] = speed1;
@@ -279,7 +278,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //      printf("%f, %f\n", (float)(totalAngle - lastAngle), speed);               // 调试使用
 //      lastAngle = totalAngle;
 
-        // // 计算PID
+        // 计算PID
         // pidoutputv1 = PID_Velocity(&motor1PID, speed1);
         // pidoutputv2 = PID_Velocity(&motor2PID, speed2);
         pidoutputv = PID_Velocity2(&motor1PID, speed1, speed2, pitch);
@@ -288,12 +287,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // 串级pid运算
         pid_end = pidoutputBc - pidoutputv;
 
-
-
         // PID死区 && 执行操作
         stand(pid_end);
         // stand(pidoutputBc);
-
 
         // if ((SetSpeed - speed1) > 0.01 || (SetSpeed - speed1) < -0.01) {
         //           printf("哈哈我又来啦");
@@ -305,10 +301,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // Set_pulse2(pidoutput2);
         // }
 
-        // 重置计数�?????
+        // 重置计数器
         __HAL_TIM_SetCounter(&htim2, RELOADVALUE / 2);
         __HAL_TIM_SetCounter(&htim3, RELOADVALUE / 2);
-
 
     //  printf("%f, %f, %f, %f, %f, %f\n", motor1PID.Kp, motor1PID.Ki, motor1PID.Kd, speed, SetSpeed, (float)(totalAngle - RELOADVALUE / 2.0)); // 调试使用
 
@@ -319,44 +314,44 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
-    if (UartHandle->Instance == USART3)  // 判断是否是串�?????1产生的中�?????
+    if (UartHandle->Instance == USART3)  // 判断是否是串口1产生的中断
     {
 
-        RxLine++;                        // 每接收到�?????个数据，接收长度�?????1
-        DataBuff[RxLine - 1] = RxBuffer[0];  // 将接收到的数据存入缓存数�?????
+        RxLine++;                        // 每接收到一个数据，接收长度加1
+        DataBuff[RxLine - 1] = RxBuffer[0];  // 将接收到的数据存入缓存数组
 
-        if (RxBuffer[0] == '!')         // 判断是否接收到结束标志（这里�?????0x21为例，可以根据实际情况修改）
+        if (RxBuffer[0] == '!')         // 判断是否接收到结束标志（这里以0x21为例，可以根据实际情况修改）
         {
             // printf("RXLen=%d\r\n", RxLine);  // 输出接收到的指令长度
             // for (int i = 0; i < RxLine; i++)
             //    printf("UART DataBuff[%d] = %c\r\n", i, DataBuff[i]);  // 输出接收到的完整指令
 
-            USART_PID_Adjust(1, &motor1PID);  // 解析指令并赋值到对应变量（这里示例传入参�?????1，可根据实际情况修改�?????
-            USART_PID_Adjust(2, &motor2PID);  // 解析指令并赋值到对应变量（这里示例传入参�?????1，可根据实际情况修改�?????
-            USART_PID_Adjust(6, &IMUPID);  // 解析指令并赋值到对应变量（这里示例传入参�?????1，可根据实际情况修改�?????
+            USART_PID_Adjust(1, &motor1PID);  // 解析指令并赋值到对应变量（这里示例传入参数1，可根据实际情况修改）
+            USART_PID_Adjust(2, &motor2PID);  // 解析指令并赋值到对应变量（这里示例传入参数1，可根据实际情况修改）
+            USART_PID_Adjust(6, &IMUPID);  // 解析指令并赋值到对应变量（这里示例传入参数1，可根据实际情况修改）
 
             memset(DataBuff, 0, sizeof(DataBuff));  // 清空接收缓存
             RxLine = 0;  // 重置接收长度计数
         }
 
         RxBuffer[0] = 0;  // 清空接收缓冲
-        HAL_UART_Receive_IT(&huart3, (uint8_t *)RxBuffer, 1);  // 重新启动串口中断接收下一个字�?????
+        HAL_UART_Receive_IT(&huart3, (uint8_t *)RxBuffer, 1);  // 重新启动串口中断接收下一个字符
     }
 }
 
 // 解析从指令缓存中提取数据
 float Get_Data(void)
 {
-    float Decimal = 0;            // 小数数�??
-    float Integer = 0;            // 整数数�??
+    float Decimal = 0;            // 小数数据
+    float Integer = 0;            // 整数数据
     uint8_t data_Decimal_len = 0; // 小数数据长度
     uint8_t data_Integer_len = 0; // 整数数据长度
-    uint8_t data_Point_Num = 0;   // 小数点位�?????
-    uint8_t data_Start_Num = 0;   // 数据位开始位�?????
-    uint8_t data_End_Num = 0;     // 数据位结束位�?????
+    uint8_t data_Point_Num = 0;   // 小数点位置
+    uint8_t data_Start_Num = 0;   // 数据位开始位置
+    uint8_t data_End_Num = 0;     // 数据位结束位置
     uint8_t minus_Flag = 0;       // 负数标志
-    float data_return = 0;        // 解析得到的数�?????
-    // 查找等号、小数点和感叹号的位�?????
+    float data_return = 0;        // 解析得到的数据
+    // 查找等号、小数点和感叹号的位置
     for (uint8_t i = 0; i < 200; i++)
     {
         if (DataBuff[i] == '=')
@@ -365,22 +360,21 @@ float Get_Data(void)
             data_Point_Num = i;
         if (DataBuff[i] == '!')
         {
-            data_End_Num = i - 1;  // 找到感叹号前面的位置作为数据结束�?????
+            data_End_Num = i - 1;  // 找到感叹号前面的位置作为数据结束位
             break;
         }
     }
 
-    // 判断数据是否为负�?????
+    // 判断数据是否为负数
     if (DataBuff[data_Start_Num] == '-')
     {
-        data_Start_Num += 1;  // 如果是负数，数据起始位后移一�?????
+        data_Start_Num += 1;  // 如果是负数，数据起始位后移一位
         minus_Flag = 1;       // 设置负数标志
     }
     // 计算整数长度
     data_Integer_len = data_Point_Num - data_Start_Num;
     // 计算小数长度
     data_Decimal_len = data_End_Num - data_Point_Num;
-
 
     // 计算整数数据
     if (data_Integer_len != 0) // 为两位数
@@ -441,18 +435,18 @@ float Get_Data(void)
     }
     data_return = Integer + Decimal;
     if (minus_Flag == 1)
-        data_return = -data_return;  // 如果是负数，取负�?????
+        data_return = -data_return;  // 如果是负数，取负值
 
     // printf("data_return:%lf\n", data_return);
 
-    return data_return;  // 返回解析得到的数�?????
+    return data_return;  // 返回解析得到的数据
 }
 
 // 根据接收到的指令内容进行PID参数调整
 void USART_PID_Adjust(uint8_t Motor_n, PID_ControllerTypeDef *pid)
 {
-    float data_Get = Get_Data();  // 解析得到的数�?????
-    // 根据指令内容赋�?�到对应的PID参数或目标变�?????
+    float data_Get = Get_Data();  // 解析得到的数据
+    // 根据指令内容赋值到对应的PID参数或目标变量
     if (Motor_n == 1)  // 电机1
     {
 
@@ -468,7 +462,7 @@ void USART_PID_Adjust(uint8_t Motor_n, PID_ControllerTypeDef *pid)
 
     }
 
-    if (Motor_n == 2)  // 电机1
+    if (Motor_n == 2)  // 电机2
     {
 
         if (DataBuff[0] == 'P' && DataBuff[1] == '2')
